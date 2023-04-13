@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AUS\RootSitemap\Middleware;
 
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -17,8 +18,10 @@ use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 
 class RootSitemapMiddleware implements MiddlewareInterface
 {
-    public function __construct(private readonly UriBuilder $uriBuilder)
+    public function __construct(private readonly ContainerInterface $container)
     {
+        // if we get the uri builder directly in the constructor, the complete template rendering is broken.
+        // so we get the container and only get the uribuilder if we are mostly certan that we will render our sitemap.xml
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -55,12 +58,13 @@ class RootSitemapMiddleware implements MiddlewareInterface
     {
         $urls = [];
         $languages = $site->getAllLanguages();
+        $uriBuilder = $this->container->get(UriBuilder::class);
         foreach ($languages as $language) {
             if (!$language->enabled()) {
                 continue;
             }
 
-            $uri = $this->uriBuilder
+            $uri = $uriBuilder
                 ->setTargetPageUid($site->getRootPageId())
                 ->setCreateAbsoluteUri(true)
                 ->setArguments(['type' => '1533906435'])
