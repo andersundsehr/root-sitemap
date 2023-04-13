@@ -13,6 +13,11 @@ This sitemap includes all active language sitemaps like: `/en/?type=1533906435` 
 
 You do not need to configure anything.
 
+## Additional sitemaps form e.g. other systems:
+
+if you want to add additional sitemaps from e.g. external Systems like a Shop system:  
+you can add them in the Sites Configuration:
+![Screenshot of sites configuration addition](./Documentation/external_sitemaps.png)
 
 ### I want nicer URLS:
 

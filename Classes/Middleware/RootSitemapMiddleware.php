@@ -63,13 +63,32 @@ class RootSitemapMiddleware implements MiddlewareInterface
             $uri = $this->uriBuilder
                 ->setTargetPageUid($site->getRootPageId())
                 ->setCreateAbsoluteUri(true)
-                ->setArguments([
-                    'type' => '1533906435',
-                ])
+                ->setArguments(['type' => '1533906435'])
                 ->setLanguage((string)$language->getLanguageId())
                 ->buildFrontendUri();
 
-            $urls[] = new Uri($uri);
+            if ($uri) {
+                $urls[] = new Uri($uri);
+            }
+        }
+
+        $externalSitemaps = $site->getConfiguration()['external_sitemaps'];
+        $base = $site->getBase();
+        foreach (GeneralUtility::trimExplode("\n", $externalSitemaps, true) as $externalSitemap) {
+            $uri = new Uri($externalSitemap);
+            if (!$uri->getScheme()) {
+                $uri = $uri->withScheme($base->getScheme());
+            }
+
+            if (!$uri->getHost()) {
+                $uri = $uri->withHost($base->getHost());
+            }
+
+            if (!$uri->getPort()) {
+                $uri = $uri->withPort($base->getPort());
+            }
+
+            $urls[] = $uri;
         }
 
         return $urls;
