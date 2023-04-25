@@ -65,7 +65,7 @@ class RootSitemapMiddleware implements MiddlewareInterface
             }
         }
 
-        $externalSitemaps = $site->getConfiguration()['external_sitemaps'];
+        $externalSitemaps = $site->getConfiguration()['external_sitemaps'] ?? '';
         $base = $site->getBase();
         foreach (GeneralUtility::trimExplode("\n", $externalSitemaps, true) as $externalSitemap) {
             $uri = new Uri($externalSitemap);
