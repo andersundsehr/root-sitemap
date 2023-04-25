@@ -6,11 +6,13 @@ namespace AUS\RootSitemap\Middleware;
 
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\UriInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\Uri;
+use TYPO3\CMS\Core\Routing\InvalidRouteArgumentsException;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
@@ -18,12 +20,6 @@ use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 
 class RootSitemapMiddleware implements MiddlewareInterface
 {
-    public function __construct(private readonly ContainerInterface $container)
-    {
-        // if we get the uri builder directly in the constructor, the complete template rendering is broken.
-        // so we get the container and only get the uribuilder if we are mostly certan that we will render our sitemap.xml
-    }
-
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if ($request->getUri()->getPath() !== '/sitemap.xml') {
@@ -52,27 +48,20 @@ class RootSitemapMiddleware implements MiddlewareInterface
     }
 
     /**
-     * @return array<Uri>
+     * @return array<UriInterface>
      */
     private function getSitemapsPerLanguage(Site $site): array
     {
         $urls = [];
         $languages = $site->getAllLanguages();
-        $uriBuilder = $this->container->get(UriBuilder::class);
         foreach ($languages as $language) {
             if (!$language->enabled()) {
                 continue;
             }
 
-            $uri = $uriBuilder
-                ->setTargetPageUid($site->getRootPageId())
-                ->setCreateAbsoluteUri(true)
-                ->setArguments(['type' => '1533906435'])
-                ->setLanguage((string)$language->getLanguageId())
-                ->buildFrontendUri();
-
-            if ($uri) {
-                $urls[] = new Uri($uri);
+            try {
+                $urls[] = $site->getRouter()->generateUri($site->getRootPageId(), ['type' => '1533906435', '_language' => $language]);
+            } catch (InvalidRouteArgumentsException) {
             }
         }
 
@@ -99,7 +88,7 @@ class RootSitemapMiddleware implements MiddlewareInterface
     }
 
     /**
-     * @param array<Uri> $urls
+     * @param array<UriInterface> $urls
      */
     private function renderHtml(array $urls): string
     {
