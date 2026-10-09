@@ -38,4 +38,14 @@ jobs:
       - run: composer require typo3/minimal="^${{ matrix.typo3 }}" --sort-packages --no-scripts -W --dev
       - run: composer install --no-interaction --no-progress
       - run: bash tests/typo3-svg-sanitizer.sh
-      - run: ./vendor/bin/grumphp run --ansi
+      - name: Run all static checks
+        shell: bash
+        run: |
+          set -o pipefail
+          ./vendor/bin/grumphp run --no-ansi 2>&1 | tee /tmp/php85-grumphp.log
+      - name: Report failed static checks
+        if: failure()
+        run: |
+          if [ -f /tmp/php85-grumphp.log ]; then
+            php -r '$s=file_get_contents("/tmp/php85-grumphp.log"); echo "::error::".str_replace(["%", "\r", "\n"], ["%25", "%0D", "%0A"], substr($s, -5000))."\n";'
+          fi
